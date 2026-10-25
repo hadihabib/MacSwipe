@@ -1,0 +1,14 @@
+# Android local & build outputs
+.gradle/
+**/.gradle/
+**/build/
+**/local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Never commit locally generated pairing credentials or Mac binaries
+mac/.macswipe_token
+mac/.MacSwipeReceiver
+*.keystore
+*.jks
