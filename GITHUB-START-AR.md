@@ -1,44 +1,47 @@
-# MacSwipe | إنشاء APK عن طريق GitHub فقط
+# MacSwipe v0.4 — البناء على GitHub بدون Android Studio
 
-هذه النسخة جاهزة للرفع على GitHub وتشغيل GitHub Actions لإنشاء ملف APK دون تثبيت Android Studio.
+هذه نسخة أندرويد مكتوبة بالكامل بلغة Java، بلا إضافة Kotlin، لتفادي أعطال ترجمة Kotlin في التشغيل السابق.
 
-## 1. رفع المشروع
+## الأسهل والأقل عرضة للأخطاء — رفع المشروع عبر Terminal مرة واحدة
 
-1. افتح https://github.com/new وأنشئ Repository باسم `MacSwipe`، ويفضل Private للتجربة.
-2. فك ضغط الملف `MacSwipe-v0.2-GitHub.zip` على الماك.
-3. ادخل إلى مجلد `MacSwipe-GitHub-v0.2` بعد فك الضغط.
-4. افتح المستودع في GitHub، ثم **Add file > Upload files**.
-5. اسحب **محتويات المجلد** إلى صفحة الرفع، وليس ملف ZIP نفسه. تأكد أن المجلد `.github` مرفوع كذلك؛ يمكن إظهاره في Finder عبر `Command + Shift + .`.
-6. بعد الرفع، تأكد من وجود المسارين على المستوى الأول في المستودع:
-   - `.github/workflows/build-android-apk.yml`
-   - `android/app/build.gradle.kts`
-7. اختر **Commit changes**.
+1. نزّل ملف `MacSwipe-v0.4-GitHub-Java.zip` على الماك، وضعه داخل `~/Downloads`.
+2. افتح Terminal والصق الأوامر التالية **دفعة واحدة**:
 
-**تنبيه:** رفع ملف ZIP كما هو إلى GitHub لا يفك الضغط ولا ينتج APK. يجب رفع محتوياته.
+```bash
+cd ~/Downloads
+unzip -o MacSwipe-v0.4-GitHub-Java.zip
+git clone https://github.com/hadihabib/MacSwipe.git MacSwipe-upload
+rsync -av --exclude='.git' MacSwipe-v0.4-GitHub-Java/ MacSwipe-upload/
+rm -f MacSwipe-upload/android/app/src/main/java/com/macswipe/remote/*.kt
+cd MacSwipe-upload
+git add -A
+git commit -m "Replace Kotlin Android app with Java-only build"
+git push origin main
+```
 
-## 2. البناء والتنزيل
+إذا كان مجلد `MacSwipe-upload` موجوداً سابقاً، غيّر اسمه أو احذفه بعد التأكد من عدم وجود تعديلات تحتاجها. إذا كان فرع المستودع الرئيسي ليس `main` فاستبدل `main` باسمه. 
 
-1. افتح تبويب **Actions** في GitHub.
-2. افتح **Build MacSwipe Android APK**.
-3. اختر **Run workflow** ثم **Run workflow** مرة ثانية.
-4. افتح التشغيل الذي يظهر باللون الأخضر عند نجاح البناء.
-5. من قسم **Artifacts** نزّل **MacSwipe-v0.2-debug-APK**.
-6. فك ضغط Artifact على الموبايل أو الماك وستجد `app-debug.apk`.
-7. انقل APK إلى هاتف الأندرويد وافتحه للتثبيت. قد يطلب السماح بتثبيت التطبيقات من هذا المصدر.
+3. افتح GitHub > مستودع `MacSwipe` > `Actions` > `Build MacSwipe Android APK` > `Run workflow`.
+4. عند النجاح، انزل لأسفل صفحة التشغيل > `Artifacts` > `MacSwipe-v0.4-debug-APK`.
+5. فك ZIP الناتج ونزّل `app-debug.apk` على الموبايل وثبّته.
 
-## 3. تفعيل الماك
+## بديل من المتصفح فقط
 
-1. من المشروع شغّل `mac/start.command` على الماك. يتطلب أدوات Apple Command Line Tools (`xcode-select --install`) أول مرة إذا لم تكن مثبّتة.
-2. امنح **Terminal** صلاحية **Accessibility** من `System Settings > Privacy & Security > Accessibility`.
-3. قد تحتاج لإيقاف البرنامج وإعادة تشغيله بعد منح الصلاحية.
-4. سيعرض الطرفية عنوان IP ورمز اقتران. افتح MacSwipe على الأندرويد وأدخلهما.
-5. استخدم شبكة Wi-Fi موثوقة مشتركة للجهازين. لا تفتح المنفذ 8765 على الإنترنت.
+ارفع ملفات ZIP **بعد فك ضغطه** إلى المستودع مع المحافظة على المسارات. عند استبدال ملف باسم موجود استخدم التعديل/الرفع المناسب على GitHub. احذف ملفات `.kt` القديمة من `android/app/src/main/java/com/macswipe/remote/` (إن وُجدت). تأكد من ظهور المسارات:
 
-## ملاحظات
+- `.github/workflows/build-android-apk.yml`
+- `android/build.gradle.kts`
+- `android/app/build.gradle.kts`
+- `android/app/src/main/java/com/macswipe/remote/MainActivity.java`
+- `android/app/src/main/java/com/macswipe/remote/RemoteSocket.java`
+- `android/app/src/main/java/com/macswipe/remote/TrackpadView.java`
 
-- البرنامج على الماك مستلم مستقل؛ لا يتطلب Android Studio.
-- `app-debug.apk` نسخة **Debug** مناسبة للاختبار الشخصي، وليست إصداراً موقعاً للنشر على Google Play.
-- GitHub Actions يتطلب السماح بتشغيل Actions في إعدادات المستودع.
-- الكود الحالي نسخة أولية؛ لم يُختبر هنا بالبناء على GitHub أو بتشغيله فعلياً على هاتف وماك.
-- GitHub Actions يبني من الملفات في جذر المستودع؛ لا تتركها داخل مجلد إضافي.
-- ملفات الاقتران السرية التي ينشئها الماك مستثناة من Git بواسطة `.gitignore`.
+## تشغيل مستقبل التحكم على الماك
+
+شغّل `mac/start.command` بعد منح تطبيق Terminal صلاحية Accessibility من `System Settings > Privacy & Security > Accessibility`. سيعرض البرنامج IP و Token. أدخلهما في تطبيق الأندرويد على شبكة Wi-Fi نفسها.
+
+استخدم شبكة موثوقة فقط، ولا تعمل Port Forward للمنفذ 8765 إلى الإنترنت.
+
+## التحقق
+
+اجتازت ملفات Java اختبار ترجمة صياغي محلي باستخدام بدائل مبسطة لـ Android APIs (`javac 17`). لم يُجرَ بناء Android SDK كاملاً، ولذلك نجاح `app-debug.apk` لم يُؤكَّد بعد على GitHub Actions.
