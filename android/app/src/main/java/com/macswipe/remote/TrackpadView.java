@@ -69,13 +69,13 @@ final class TrackpadView extends View {
         return new float[]{x / event.getPointerCount(), y / event.getPointerCount()};
     }
 
-    private void cancelLongPress() {
+    private void cancelPendingLongPress() {
         if (pendingLongPress != null) handler.removeCallbacks(pendingLongPress);
         pendingLongPress = null;
     }
 
     private void scheduleLongPress() {
-        cancelLongPress();
+        cancelPendingLongPress();
         pendingLongPress = () -> {
             if (fingers == 1 && !moved && !dragging) {
                 dragging = true;
@@ -97,7 +97,7 @@ final class TrackpadView extends View {
                 scheduleLongPress();
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-                cancelLongPress();
+                cancelPendingLongPress();
                 fingers = Math.max(fingers, event.getPointerCount());
                 startX = lastX = touchX = x;
                 startY = lastY = touchY = y;
@@ -110,7 +110,7 @@ final class TrackpadView extends View {
                     float totalX = x - startX, totalY = y - startY;
                     switch (fingers) {
                         case 1:
-                            if (Math.hypot(totalX, totalY) > slop) { moved = true; cancelLongPress(); }
+                            if (Math.hypot(totalX, totalY) > slop) { moved = true; cancelPendingLongPress(); }
                             long now = System.currentTimeMillis();
                             if (now - lastSent >= 14 && (Math.abs(dx) > .25f || Math.abs(dy) > .25f)) {
                                 listener.send("move", dx * 1.45, dy * 1.45);
@@ -136,10 +136,10 @@ final class TrackpadView extends View {
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
-                cancelLongPress();
+                cancelPendingLongPress();
                 break;
             case MotionEvent.ACTION_UP:
-                cancelLongPress();
+                cancelPendingLongPress();
                 if (dragging) listener.send("drag_end", 0, 0);
                 else if (System.currentTimeMillis() - gestureStart < 340 && !handled) {
                     if (fingers == 1 && !moved && Math.hypot(x - startX, y - startY) < slop * 2) {
@@ -150,7 +150,7 @@ final class TrackpadView extends View {
                 touchX = touchY = -1; fingers = 0;
                 break;
             case MotionEvent.ACTION_CANCEL:
-                cancelLongPress();
+                cancelPendingLongPress();
                 if (dragging) listener.send("drag_end", 0, 0);
                 touchX = touchY = -1; fingers = 0;
                 break;
