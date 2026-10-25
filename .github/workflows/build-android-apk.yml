@@ -3,9 +3,7 @@ name: Build MacSwipe Android APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
     paths:
       - 'android/**'
       - '.github/workflows/build-android-apk.yml'
@@ -15,10 +13,9 @@ permissions:
 
 jobs:
   build-apk:
-    name: Assemble debug APK
+    name: Assemble debug APK (Java)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -36,18 +33,46 @@ jobs:
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
 
       - name: Set up Gradle 8.9
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Build Android debug APK
+      - name: Build Android APK
         working-directory: android
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle clean :app:assembleDebug --no-daemon --console=plain 2>&1 | tee gradle-build.log
 
-      - name: Upload installable APK
+      - name: Show build errors in summary
+        if: failure()
+        working-directory: android
+        shell: bash
+        run: |
+          {
+            echo '## MacSwipe build errors'
+            echo '```text'
+            if [ -f gradle-build.log ]; then
+              grep -En '(error:|FAILURE:|What went wrong|Execution failed|Caused by:)' gradle-build.log | head -n 80 || true
+              echo '--- Last 50 lines ---'
+              tail -n 50 gradle-build.log
+            else
+              echo 'Build log was not created.'
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build log if failed
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: MacSwipe-v0.2-debug-APK
+          name: MacSwipe-v0.4-build-log
+          path: android/gradle-build.log
+          if-no-files-found: warn
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacSwipe-v0.4-debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 30
